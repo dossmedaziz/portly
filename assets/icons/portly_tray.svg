@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <title>Portly (tray)</title>
+  <!-- Monochrome socket for the dark top bar; thicker strokes for 22 px. -->
+  <path d="M3 5.5 a1.5 1.5 0 0 1 1.5 -1.5 h13 a1.5 1.5 0 0 1 1.5 1.5 v9 a1.5 1.5 0 0 1 -1.5 1.5 h-3 v2 a1 1 0 0 1 -1 1 h-5 a1 1 0 0 1 -1 -1 v-2 h-3 a1.5 1.5 0 0 1 -1.5 -1.5 z"
+        fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+  <g fill="#ffffff">
+    <rect x="6.5" y="7" width="2" height="4" rx="0.6"/>
+    <rect x="10" y="7" width="2" height="4" rx="0.6"/>
+    <rect x="13.5" y="7" width="2" height="4" rx="0.6"/>
+  </g>
+</svg>
