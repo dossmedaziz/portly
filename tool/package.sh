@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Build Portly release packages:
-#   dist/portly_<version>_amd64.deb
-#   dist/Portly-<version>-x86_64.AppImage   (needs appimagetool)
+#   dist/portly_prod.deb
+#   dist/portly_prod.AppImage   (needs appimagetool)
+#
+# The latest build is always named portly_prod; the version lives in the
+# package metadata.
 #
 # Usage: tool/package.sh [deb|appimage|all]   (default: all)
 #
@@ -65,8 +68,8 @@ Description: See what's running on your ports — and free them in one click.
  the system tray.
 EOF
 
-  dpkg-deb --build --root-owner-group "$root" "$DIST/$name.deb"
-  echo "==> $DIST/$name.deb"
+  dpkg-deb --build --root-owner-group "$root" "$DIST/portly_prod.deb"
+  echo "==> $DIST/portly_prod.deb ($VERSION)"
 }
 
 find_appimagetool() {
@@ -107,7 +110,7 @@ EOF
     echo "   into tools/ (chmod +x), or set APPIMAGETOOL=/path/to/appimagetool."
     return 0
   fi
-  local out="$DIST/Portly-$VERSION-x86_64.AppImage"
+  local out="$DIST/portly_prod.AppImage"
   ARCH=x86_64 "$tool" --no-appstream "$appdir" "$out"
   echo "==> $out"
 }

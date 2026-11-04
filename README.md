@@ -30,6 +30,7 @@ listening, who owns it, and a button to free it.
 ## Open source
 
 Portly is **free and open source software**, released under the [MIT License](LICENSE).
+The full source code is on GitHub: <https://github.com/dossmedaziz/portly>.
 You are welcome to use it, study the code, change it, share it and build on it — for
 personal or commercial use — as long as the license notice stays with the code.
 
@@ -39,14 +40,24 @@ Ideas, bug reports and pull requests are welcome.
 
 ### Option 1 — Debian / Ubuntu package (.deb)
 
-Download `portly_<version>_amd64.deb` (or build it, see [Build packages](#build-packages))
+Download `portly_prod.deb` (or build it, see [Build packages](#build-packages))
 and install it with apt, which also pulls in the dependencies:
 
 ```bash
-sudo apt install ./portly_1.0.0_amd64.deb
+sudo apt install ./portly_prod.deb
 ```
 
-Then open **Portly** from the app grid, or run `portly` in a terminal. To remove it:
+Then open **Portly** from the app grid, or run `portly` in a terminal.
+
+To update, quit Portly (tray → **Quit Portly**) and install the newer `portly_prod.deb`
+the same way. If its version number did not change, apt reports it as already
+installed; reinstall it instead:
+
+```bash
+sudo apt install --reinstall ./portly_prod.deb
+```
+
+To remove it:
 
 ```bash
 sudo apt remove portly
@@ -54,11 +65,11 @@ sudo apt remove portly
 
 ### Option 2 — AppImage (any distribution)
 
-Download `Portly-<version>-x86_64.AppImage`, make it executable and run it:
+Download `portly_prod.AppImage`, make it executable and run it:
 
 ```bash
-chmod +x Portly-1.0.0-x86_64.AppImage
-./Portly-1.0.0-x86_64.AppImage
+chmod +x portly_prod.AppImage
+./portly_prod.AppImage
 ```
 
 On first launch Portly adds itself to your app grid and gives the dock its icon by
@@ -74,6 +85,8 @@ The AppImage needs `libnotify4` and `libgtk-3-0`, which every Ubuntu desktop has
 Install the [build dependencies](#build-dependencies), then:
 
 ```bash
+git clone https://github.com/dossmedaziz/portly.git
+cd portly
 flutter pub get
 flutter build linux --release
 ./build/linux/x64/release/bundle/portly
@@ -146,9 +159,13 @@ flutter test
 
 ```bash
 tool/package.sh          # .deb and AppImage
-tool/package.sh deb      # dist/portly_<version>_amd64.deb
-tool/package.sh appimage # dist/Portly-<version>-x86_64.AppImage
+tool/package.sh deb      # dist/portly_prod.deb
+tool/package.sh appimage # dist/portly_prod.AppImage
 ```
+
+The latest build is always named `portly_prod` and overwrites the previous one; the
+real version (`version:` in `pubspec.yaml`) is stored inside the package. Bump it
+before building a release so apt treats the new `.deb` as an upgrade.
 
 - The `.deb` installs the app to `/usr/lib/portly`, a `portly` launcher in `/usr/bin`,
   `dev.dosss.portly.desktop` in `/usr/share/applications` and the icons in
