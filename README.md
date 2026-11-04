@@ -1,6 +1,14 @@
-# Portly
+<p align="center">
+  <img src="assets/icons/portly_256.png" alt="Portly icon" width="128" height="128">
+</p>
 
-**See what's running on your ports — and free them in one click.**
+<h1 align="center">Portly</h1>
+
+<p align="center"><strong>See what's running on your ports — and free them in one click.</strong></p>
+
+<p align="center">
+  Free and open source · MIT License · Linux
+</p>
 
 Portly is a small Linux desktop app that lists every listening TCP and UDP port on your
 machine, shows which process owns it, and lets you stop that process — from a window
@@ -9,6 +17,73 @@ window, and only exits when you choose **Quit Portly**.
 
 ![Portly main window](docs/screenshot.png)
 <!-- TODO: add a screenshot at docs/screenshot.png -->
+
+## Why Portly?
+
+The idea behind Portly is to **simplify managing the ports in my Linux ecosystem**.
+Between dev servers, databases, Docker containers and system services, ports get
+taken all the time, and finding out who holds one usually means remembering the
+right `ss`, `lsof` or `fuser` incantation, then `kill`ing the right PID (with `sudo`
+when it's not yours). Portly turns that into a glance at the top bar: what is
+listening, who owns it, and a button to free it.
+
+## Open source
+
+Portly is **free and open source software**, released under the [MIT License](LICENSE).
+You are welcome to use it, study the code, change it, share it and build on it — for
+personal or commercial use — as long as the license notice stays with the code.
+
+Ideas, bug reports and pull requests are welcome.
+
+## Install
+
+### Option 1 — Debian / Ubuntu package (.deb)
+
+Download `portly_<version>_amd64.deb` (or build it, see [Build packages](#build-packages))
+and install it with apt, which also pulls in the dependencies:
+
+```bash
+sudo apt install ./portly_1.0.0_amd64.deb
+```
+
+Then open **Portly** from the app grid, or run `portly` in a terminal. To remove it:
+
+```bash
+sudo apt remove portly
+```
+
+### Option 2 — AppImage (any distribution)
+
+Download `Portly-<version>-x86_64.AppImage`, make it executable and run it:
+
+```bash
+chmod +x Portly-1.0.0-x86_64.AppImage
+./Portly-1.0.0-x86_64.AppImage
+```
+
+On first launch Portly adds itself to your app grid and gives the dock its icon by
+writing `~/.local/share/applications/dev.dosss.portly.desktop` and its icons under
+`~/.local/share/icons/hicolor`. If you move the AppImage, the next launch updates the
+entry. Restart Portly once if the dock icon does not appear straight away. Installing
+the .deb later removes this per-user copy automatically.
+
+The AppImage needs `libnotify4` and `libgtk-3-0`, which every Ubuntu desktop has.
+
+### Option 3 — From source
+
+Install the [build dependencies](#build-dependencies), then:
+
+```bash
+flutter pub get
+flutter build linux --release
+./build/linux/x64/release/bundle/portly
+```
+
+### Requirements
+
+- Linux with a StatusNotifierItem tray. On GNOME that is the **Ubuntu AppIndicators**
+  extension (enabled by default on Ubuntu).
+- `iproute2` (for `ss`) and `pkexec` — present on standard Ubuntu desktops.
 
 ## Features
 
@@ -30,9 +105,9 @@ window, and only exits when you choose **Quit Portly**.
 - Single instance: launching Portly again brings the existing window back.
 - Falls back to `/proc/net/{tcp,tcp6,udp,udp6}` if `ss` is missing.
 
-## Install dependencies
+## Build dependencies
 
-Ubuntu 26.04 / Debian, with Flutter 3.47+ on the stable channel:
+To build Portly yourself (Ubuntu 26.04 / Debian, Flutter 3.47+ on the stable channel):
 
 ```bash
 sudo apt install libgtk-3-dev libx11-dev libxi-dev libnotify-dev ninja-build cmake clang pkg-config
@@ -43,10 +118,6 @@ Optional, only to regenerate the PNG icons from the SVGs (otherwise GdkPixbuf is
 ```bash
 sudo apt install librsvg2-bin
 ```
-
-At runtime Portly needs `iproute2` (for `ss`) and `pkexec`, both present on a standard
-Ubuntu desktop. On GNOME the **Ubuntu AppIndicators** extension must be enabled for the
-tray icon (it is by default on Ubuntu).
 
 > `tray_manager` 0.8 talks StatusNotifierItem over D-Bus directly, so
 > `libayatana-appindicator3-dev` is no longer required.
@@ -86,11 +157,7 @@ tool/package.sh appimage # dist/Portly-<version>-x86_64.AppImage
   put it in `tools/` (and `chmod +x` it) or point `APPIMAGETOOL` at it. Without it the
   script still assembles `build/package/Portly.AppDir` and skips the final step.
 
-Install the `.deb`:
-
-```bash
-sudo apt install ./dist/portly_1.0.0_amd64.deb
-```
+Install the result as described in [Install](#install).
 
 Regenerate the icons after editing `assets/icons/portly.svg` or `portly_tray.svg`:
 

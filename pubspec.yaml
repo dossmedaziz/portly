@@ -28,3 +28,5 @@ flutter:
     - assets/icons/portly_tray_22.png
     - assets/icons/portly_tray_32.png
     - assets/icons/portly_128.png
+    - assets/icons/portly_256.png
+    - assets/icons/portly_512.png

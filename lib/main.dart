@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +10,7 @@ import 'app.dart';
 import 'providers/actions.dart';
 import 'providers/providers.dart';
 import 'services/app_controller.dart';
+import 'services/desktop_integration.dart';
 import 'services/settings_service.dart';
 import 'services/single_instance.dart';
 import 'services/tray_service.dart';
@@ -35,6 +38,17 @@ Future<void> main(List<String> args) async {
     ],
   );
   window.init(startHidden: startHidden);
+
+  // Dock / Alt+Tab icon for AppImage and dev builds (the .deb ships its own).
+  unawaited(
+    DesktopIntegration(
+      loadAsset: (asset) async =>
+          (await rootBundle.load(asset)).buffer.asUint8List(),
+    ).ensure().catchError((Object e) {
+      debugPrint('Desktop integration skipped: $e');
+      return false;
+    }),
+  );
 
   final notifications = container.read(notificationServiceProvider);
   await notifications.init();

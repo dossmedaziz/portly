@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import '../identity.dart';
+import 'launch_command.dart';
 
 /// Manages `~/.config/autostart/dev.dosss.portly.desktop`.
 ///
@@ -36,17 +37,8 @@ class AutostartService {
   }
 
   /// The command autostart should run.
-  ///
-  /// Installed builds (deb, under /usr or /opt) use `portly` from PATH; an
-  /// AppImage uses its own path; a dev build uses the absolute binary path.
-  String get launchCommand {
-    final appImage = _env['APPIMAGE'];
-    if (appImage != null && appImage.isNotEmpty) return _quote(appImage);
-    if (_executable.startsWith('/usr/') || _executable.startsWith('/opt/')) {
-      return binaryName;
-    }
-    return _quote(_executable);
-  }
+  String get launchCommand =>
+      launchCommandFor(env: _env, executable: _executable);
 
   String desktopEntry({required bool hidden}) =>
       '''
@@ -61,7 +53,4 @@ StartupNotify=false
 StartupWMClass=$applicationId
 X-GNOME-Autostart-enabled=true
 ''';
-
-  static String _quote(String path) =>
-      path.contains(' ') ? '"${path.replaceAll('"', r'\"')}"' : path;
 }
