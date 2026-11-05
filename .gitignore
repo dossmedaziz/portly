@@ -50,3 +50,9 @@ app.*.map.json
 # Packaging
 /dist/
 /tools/
+
+# Snap builds
+*.snap
+/parts/
+/stage/
+/prime/

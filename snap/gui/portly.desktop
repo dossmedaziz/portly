@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Portly
+GenericName=Port Manager
+Comment=See what's running on your ports — and free them in one click.
+Exec=portly
+Icon=${SNAP}/meta/gui/portly.png
+Terminal=false
+StartupNotify=true
+StartupWMClass=dev.dosss.portly
+Categories=System;Utility;Network;
+Keywords=port;socket;process;kill;network;localhost;

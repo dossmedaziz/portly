@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 /// Ensures one Portly per session through a Unix socket at
 /// `$XDG_RUNTIME_DIR/portly.sock`.
 ///
@@ -39,9 +41,13 @@ class SingleInstance {
 
     try {
       _server = await ServerSocket.bind(_address, 0);
-    } on SocketException {
-      // Lost a race with another instance starting at the same moment.
-      return !(await _notifyExisting('show'));
+    } on SocketException catch (e) {
+      // Lost a race with another instance starting at the same moment...
+      if (await _notifyExisting('show')) return false;
+      // ...or the socket cannot be created at all (e.g. a path longer than
+      // the 108-byte Unix socket limit): run without single-instance.
+      debugPrint('Single-instance socket unavailable at $socketPath: $e');
+      return true;
     }
     _server!.listen((client) {
       client

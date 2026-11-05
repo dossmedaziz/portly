@@ -2,11 +2,12 @@
 # Build Portly release packages:
 #   dist/portly_prod.deb
 #   dist/portly_prod.AppImage   (needs appimagetool)
+#   dist/portly_prod.snap       (needs snapcraft)
 #
 # The latest build is always named portly_prod; the version lives in the
 # package metadata.
 #
-# Usage: tool/package.sh [deb|appimage|all]   (default: all)
+# Usage: tool/package.sh [deb|appimage|snap|all]   (default: all)
 #
 # appimagetool is looked up as $APPIMAGETOOL, then on PATH, then in tools/.
 set -euo pipefail
@@ -22,7 +23,8 @@ WORK=$ROOT/build/package
 DIST=$ROOT/dist
 
 echo "==> Portly $VERSION"
-flutter build linux --release
+# The snap builds Flutter itself; the other targets package this bundle.
+[[ $TARGET == snap ]] || flutter build linux --release
 mkdir -p "$DIST"
 
 install_icons() { # <usr dir>
@@ -48,6 +50,8 @@ build_deb() {
     "$root/usr/share/applications/$APP_ID.desktop"
   install_icons "$root/usr"
   install -Dm644 LICENSE "$root/usr/share/doc/portly/copyright"
+  install -Dm644 "linux/packaging/$APP_ID.metainfo.xml" \
+    "$root/usr/share/metainfo/$APP_ID.metainfo.xml"
 
   chmod -R u+rwX,go+rX,go-w "$root"
   local size
@@ -115,9 +119,24 @@ EOF
   echo "==> $out"
 }
 
+build_snap() {
+  if ! command -v snapcraft >/dev/null; then
+    echo "!! snapcraft not found: sudo snap install snapcraft --classic"
+    return 0
+  fi
+  # core26 matches Ubuntu 26.04, so build on the host; elsewhere drop
+  # --destructive-mode to build in LXD.
+  # Always start clean: snapcraft copies the working tree, and incremental
+  # updates trip over files that flutter build/test changed in it.
+  snapcraft clean --destructive-mode
+  snapcraft pack --destructive-mode --output "$DIST/portly_prod.snap"
+  echo "==> $DIST/portly_prod.snap"
+}
+
 case $TARGET in
   deb) build_deb ;;
   appimage) build_appimage ;;
-  all) build_deb; build_appimage ;;
-  *) echo "usage: $0 [deb|appimage|all]" >&2; exit 2 ;;
+  snap) build_snap ;;
+  all) build_deb; build_appimage; build_snap ;;
+  *) echo "usage: $0 [deb|appimage|snap|all]" >&2; exit 2 ;;
 esac

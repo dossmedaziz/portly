@@ -83,4 +83,14 @@ void main() {
     expect(await d.ensure(), isTrue);
     expect(d.desktopFile.existsSync(), isFalse);
   });
+
+  test('a snap never writes a per-user copy and removes an old one', () async {
+    await integration().ensure();
+    env['SNAP_NAME'] = 'portly';
+    final d = integration();
+    expect(d.isSystemInstalled, isTrue);
+    expect(await d.ensure(), isTrue);
+    expect(d.desktopFile.existsSync(), isFalse);
+    expect(await d.ensure(), isFalse);
+  });
 }

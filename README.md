@@ -15,8 +15,12 @@ machine, shows which process owns it, and lets you stop that process — from a 
 or straight from the system tray. It starts in the tray, stays there when you close the
 window, and only exits when you choose **Quit Portly**.
 
-![Portly main window](docs/screenshot.png)
-<!-- TODO: add a screenshot at docs/screenshot.png -->
+![Portly main window](docs/screenshots/1-ports-light.png)
+
+<p align="center">
+  <img src="docs/screenshots/2-lookup-dark.png" alt="Port lookup, dark theme" width="49%">
+  <img src="docs/screenshots/3-stop-dialog.png" alt="Stop confirmation" width="49%">
+</p>
 
 ## Why Portly?
 
@@ -37,6 +41,19 @@ personal or commercial use — as long as the license notice stays with the code
 Ideas, bug reports and pull requests are welcome.
 
 ## Install
+
+### Ubuntu App Center (Snap Store)
+
+Portly is being published to the Snap Store, which is where Ubuntu's **App Center**
+gets its apps. Once it is live, search for **Portly** in App Center, or run:
+
+```bash
+sudo snap install portly --classic
+```
+
+Portly is a *classic* snap because it needs full access to `/proc`, `ss` and
+`pkexec` to see every port and stop root-owned processes. How it is built and
+published: [docs/snap-store.md](docs/snap-store.md).
 
 ### Option 1 — Debian / Ubuntu package (.deb)
 
@@ -161,6 +178,7 @@ flutter test
 tool/package.sh          # .deb and AppImage
 tool/package.sh deb      # dist/portly_prod.deb
 tool/package.sh appimage # dist/portly_prod.AppImage
+tool/package.sh snap     # dist/portly_prod.snap (needs snapcraft)
 ```
 
 The latest build is always named `portly_prod` and overwrites the previous one; the

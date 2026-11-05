@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.dosss.portly</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>Portly</name>
+  <summary>See what's running on your ports — and free them in one click</summary>
+  <developer id="dev.dosss">
+    <name>dosss</name>
+  </developer>
+
+  <description>
+    <p>
+      Portly simplifies managing the ports on your Linux machine. It lists every
+      listening TCP and UDP port, shows which process owns it, and lets you stop
+      that process from a window or straight from the system tray.
+    </p>
+    <ul>
+      <li>Live list of ports with process, PID, user and full command line</li>
+      <li>Search, filter by protocol and "Mine only", sort by port or process</li>
+      <li>"What's using port X?" lookup</li>
+      <li>Stop or force kill, with a password prompt for root-owned processes</li>
+      <li>Tray menu with your processes and the status of your favorite ports</li>
+      <li>Notifications when a favorite port opens or closes</li>
+    </ul>
+    <p>Portly is free and open source software under the MIT License.</p>
+  </description>
+
+  <launchable type="desktop-id">dev.dosss.portly.desktop</launchable>
+
+  <url type="homepage">https://github.com/dossmedaziz/portly</url>
+  <url type="bugtracker">https://github.com/dossmedaziz/portly/issues</url>
+  <url type="vcs-browser">https://github.com/dossmedaziz/portly</url>
+
+  <categories>
+    <category>System</category>
+    <category>Utility</category>
+    <category>Network</category>
+  </categories>
+
+  <keywords>
+    <keyword>port</keyword>
+    <keyword>socket</keyword>
+    <keyword>process</keyword>
+    <keyword>kill</keyword>
+    <keyword>localhost</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="1.0.0" date="2026-11-05"/>
+  </releases>
+</component>

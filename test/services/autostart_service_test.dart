@@ -52,4 +52,14 @@ void main() {
     ).desktopEntry(hidden: false);
     expect(entry, contains('Exec=portly\n'));
   });
+
+  test('a snap autostarts through /snap/bin', () {
+    expect(
+      AutostartService(
+        executable: '/snap/portly/12/portly',
+        env: const {'SNAP_NAME': 'portly', 'SNAP': '/snap/portly/12'},
+      ).desktopEntry(hidden: true),
+      contains('Exec=/snap/bin/portly --hidden\n'),
+    );
+  });
 }

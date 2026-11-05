@@ -13,6 +13,10 @@ analyzer:
   exclude:
     - build/**
     - linux/**
+    # snapcraft working folders (contain a full Flutter SDK)
+    - parts/**
+    - stage/**
+    - prime/**
 
 linter:
   # The lint rules applied to this project can be customized in the

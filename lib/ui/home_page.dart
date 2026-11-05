@@ -42,6 +42,7 @@ class HomePage extends ConsumerWidget {
         ],
       ),
       body: const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _Toolbar(),
           _PortLookup(),

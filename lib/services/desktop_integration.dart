@@ -46,10 +46,13 @@ class DesktopIntegration {
   File iconFile(int size) =>
       File('$_dataHome/icons/hicolor/${size}x$size/apps/$iconName.png');
 
-  /// A system-wide install (the .deb) already provides the entry and icons.
-  bool get isSystemInstalled => _systemDataDirs.any(
-    (dir) => File('$dir/applications/$applicationId.desktop').existsSync(),
-  );
+  /// A system-wide install (the .deb, or the snap, whose entry snapd
+  /// installs) already provides the entry and icons.
+  bool get isSystemInstalled =>
+      (_env['SNAP_NAME']?.isNotEmpty ?? false) ||
+      _systemDataDirs.any(
+        (dir) => File('$dir/applications/$applicationId.desktop').existsSync(),
+      );
 
   String desktopEntry() =>
       '''

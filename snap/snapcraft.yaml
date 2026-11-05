@@ -1,0 +1,71 @@
+name: portly
+title: Portly
+base: core26
+adopt-info: portly # version comes from pubspec.yaml
+summary: See what's running on your ports — and free them in one click.
+description: |
+  Portly simplifies managing the ports on your Linux machine. It lists every
+  listening TCP and UDP port, shows which process owns it, and lets you stop
+  that process from a window or straight from the system tray.
+
+  - Live list of ports with process, PID, user and full command line
+  - Search, filter by protocol and "Mine only", sort by port or process
+  - "What's using port X?" lookup
+  - Stop or force kill, with a password prompt for root-owned processes
+  - Tray menu with your processes and the status of your favorite ports
+  - Notifications when a favorite port opens or closes
+
+  Portly is free and open source software under the MIT License.
+license: MIT
+icon: snap/gui/portly.png
+website: https://github.com/dossmedaziz/portly
+source-code: https://github.com/dossmedaziz/portly
+issues: https://github.com/dossmedaziz/portly/issues
+contact: https://github.com/dossmedaziz/portly/issues
+
+grade: stable
+# Classic: Portly reads every process in /proc, runs the host's `ss` and
+# `pkexec`, and signals processes of other users through pkexec — none of
+# which strict confinement allows. Needs Snap Store approval.
+confinement: classic
+compression: lzo
+
+platforms:
+  amd64:
+
+apps:
+  portly:
+    command: portly
+    common-id: dev.dosss.portly
+    # GNOME, the tray host and libnotify come from the host desktop.
+
+parts:
+  portly:
+    plugin: flutter
+    source: .
+    flutter-target: lib/main.dart
+    build-packages:
+      - libgtk-3-dev
+      - libnotify-dev
+      - libx11-dev
+      - libxi-dev
+      - pkg-config
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -n 's/^version: *\([0-9.]*\).*/\1/p' pubspec.yaml)"
+    override-build: |
+      # The source is a copy of the working tree: drop host build caches
+      # (CMake refuses a cache created in another directory).
+      rm -rf build .dart_tool dist tools
+      craftctl default
+    override-prime: |
+      craftctl default
+      install -Dm644 "$CRAFT_PROJECT_DIR/linux/packaging/dev.dosss.portly.metainfo.xml" \
+        "$CRAFT_PRIME/usr/share/metainfo/dev.dosss.portly.metainfo.xml"
+
+lint:
+  ignore:
+    # A classic snap uses the host's GTK, libnotify and D-Bus, like any
+    # desktop app installed from a .deb.
+    - classic
+    - library
