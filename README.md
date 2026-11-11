@@ -44,16 +44,23 @@ Ideas, bug reports and pull requests are welcome.
 
 ### Ubuntu App Center (Snap Store)
 
-Portly is being published to the Snap Store, which is where Ubuntu's **App Center**
-gets its apps. Once it is live, search for **Portly** in App Center, or run:
+Search for **Portly** in Ubuntu's **App Center**, or run:
 
 ```bash
-sudo snap install portly --classic
+sudo snap install portly
 ```
 
-Portly is a *classic* snap because it needs full access to `/proc`, `ss` and
-`pkexec` to see every port and stop root-owned processes. How it is built and
-published: [docs/snap-store.md](docs/snap-store.md).
+Snaps run in a sandbox, so allow Portly once to stop your processes:
+
+```bash
+sudo snap connect portly:process-control
+```
+
+The snap lists every port and stops your own processes. It cannot ask for your
+password to stop processes of **root or other users**; for those it shows the
+exact `sudo` command to run instead (for a systemd service, `sudo systemctl stop
+<unit>`). The .deb and AppImage below can do that from inside Portly. How the
+snap is built and published: [docs/snap-store.md](docs/snap-store.md).
 
 ### Option 1 — Debian / Ubuntu package (.deb)
 

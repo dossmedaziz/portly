@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portly/app.dart';
 import 'package:portly/core/port_scanner.dart';
 import 'package:portly/core/proc_reader.dart';
+import 'package:portly/core/sandbox.dart';
 import 'package:portly/providers/providers.dart';
 import 'package:portly/services/autostart_service.dart';
 import 'package:portly/services/settings_service.dart';
@@ -31,7 +32,12 @@ void main() {
   setUp(() => tmp = Directory.systemTemp.createTempSync('portly_ui'));
   tearDown(() => tmp.deleteSync(recursive: true));
 
-  Future<ProviderContainer> pumpApp(WidgetTester tester, String output) async {
+  Future<ProviderContainer> pumpApp(
+    WidgetTester tester,
+    String output, {
+    Sandbox sandbox = const Sandbox.none(),
+    bool canSignal = true,
+  }) async {
     await tester.binding.setSurfaceSize(const Size(1200, 800));
     final container = ProviderContainer(
       overrides: [
@@ -49,6 +55,8 @@ void main() {
           ),
         ),
         currentUidProvider.overrideWithValue(1000),
+        sandboxProvider.overrideWithValue(sandbox),
+        canSignalProvider.overrideWith((ref) async => canSignal),
       ],
     );
     await tester.pumpWidget(
@@ -111,6 +119,53 @@ void main() {
   testWidgets('empty state', (tester) async {
     final container = await pumpApp(tester, '');
     expect(find.text('Nothing is listening'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    container.dispose();
+  });
+
+  testWidgets('snap: no elevated scan, sudo hint for root ports', (
+    tester,
+  ) async {
+    final container = await pumpApp(
+      tester,
+      ssOutput,
+      sandbox: const Sandbox(snapName: 'portly'),
+    );
+    expect(find.text('Elevated scan'), findsNothing);
+    expect(find.textContaining('snap connect'), findsNothing);
+
+    await tester.tap(find.byTooltip('How to stop (needs sudo)').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Port 22 belongs to'), findsOneWidget);
+    expect(find.text('sudo systemctl stop ssh.socket'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(const SizedBox());
+    container.dispose();
+  });
+
+  testWidgets('snap without process-control asks to connect it', (
+    tester,
+  ) async {
+    final container = await pumpApp(
+      tester,
+      ssOutput,
+      sandbox: const Sandbox(snapName: 'portly'),
+      canSignal: false,
+    );
+    expect(
+      find.textContaining('snap connect portly:process-control'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('Stop (SIGTERM)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Allow Portly to stop processes'), findsOneWidget);
+    expect(find.text('Stop python3?'), findsNothing);
+
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox());
     container.dispose();
   });

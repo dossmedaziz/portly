@@ -114,6 +114,7 @@ class _PortRow extends ConsumerWidget {
     final mono = theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
     final actions = ref.read(actionsProvider);
     final elevated = entry.needsElevation(uid);
+    final canElevate = ref.watch(sandboxProvider).canElevate;
 
     Widget cell(int index, Widget child) =>
         Expanded(flex: _columns[index].$2, child: child);
@@ -144,7 +145,9 @@ class _PortRow extends ConsumerWidget {
                   Tooltip(
                     message: entry.restricted
                         ? 'Owned by ${entry.user ?? 'another user'} — process hidden'
-                        : 'Owned by ${entry.user ?? 'another user'} — needs your password to stop',
+                        : canElevate
+                        ? 'Owned by ${entry.user ?? 'another user'} — needs your password to stop'
+                        : 'Owned by ${entry.user ?? 'another user'} — stop it with sudo',
                     child: Icon(Icons.lock_outline, size: 14, color: muted),
                   ),
                 ],
@@ -195,9 +198,11 @@ class _PortRow extends ConsumerWidget {
                     onPressed: () => actions.openInBrowser(entry.port),
                   ),
                 IconButton(
-                  tooltip: elevated
+                  tooltip: !elevated
+                      ? 'Stop (SIGTERM)'
+                      : canElevate
                       ? 'Stop (asks for password)'
-                      : 'Stop (SIGTERM)',
+                      : 'How to stop (needs sudo)',
                   icon: Icon(
                     Icons.stop_circle_outlined,
                     size: 20,

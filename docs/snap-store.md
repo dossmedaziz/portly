@@ -1,32 +1,41 @@
 # Publishing Portly to the Snap Store (Ubuntu App Center)
 
 Ubuntu's **App Center** installs apps from the [Snap Store](https://snapcraft.io).
-Portly is packaged as a **classic** snap (`snap/snapcraft.yaml`): it needs the
-host's `/proc`, `ss` and `pkexec` to list every port and stop processes of
-other users, which strict confinement does not allow. Classic snaps are
-reviewed by hand once, before their first release.
+Portly is published there as a **strict** (sandboxed) snap, defined in
+`snap/snapcraft.yaml`. Strict snaps pass the store's automated review, so a new
+revision can be released right after upload.
+
+## Why strict, and what changes in the snap
+
+A classic snap was requested first and declined
+([forum thread](https://forum.snapcraft.io/t/classic-confinement-request-for-portly/54129)):
+running `pkexec` from a snap is not allowed, and classic is reserved for
+established projects. Following the reviewer's advice, the snap:
+
+- ships `ss` (iproute2) and plugs `network-observe` + `system-observe` to list
+  sockets and read `/proc/<pid>/{cmdline,status}`;
+- plugs `process-control` to stop the user's own processes. It is a
+  super-privileged interface, so users connect it once by hand:
+  `sudo snap connect portly:process-control` (Portly shows this command in a
+  banner until it is connected). An auto-connection request can be made on the
+  forum later, once the project is better established;
+- does not elevate: for processes of root or other users Portly shows the
+  command to run instead (`sudo systemctl stop <unit>`, `sudo kill <pid>`, or
+  an `ss` lookup), and hides "Elevated scan";
+- uses snapcraft's `autostart:` key for "Start on login";
+- opens URLs with `xdg-open`, which goes through the desktop portal;
+- uses the `gnome` extension for GTK and `unity7` for the tray icon.
+
+The sandbox logic lives in `lib/core/sandbox.dart`. The .deb and AppImage keep
+pkexec and every feature.
 
 ## 1. One-time setup
 
 ```bash
 sudo snap install snapcraft --classic
-```
-
-Create an Ubuntu One account (or sign in) at <https://snapcraft.io/account>,
-then log in from the terminal:
-
-```bash
 snapcraft login
+snapcraft register portly   # already done for "portly"
 ```
-
-Reserve the name (once per snap):
-
-```bash
-snapcraft register portly
-```
-
-If the name is taken, pick another (for example `portly-ports`) and change
-`name:` in `snap/snapcraft.yaml`.
 
 ## 2. Build
 
@@ -35,80 +44,42 @@ tool/package.sh snap        # dist/portly_prod.snap
 ```
 
 On Ubuntu 26.04 this builds directly on the machine (`--destructive-mode`,
-because the `core26` base matches the host). On another release, build in LXD
-instead: `sudo snap install lxd && sudo lxd init --auto`, add yourself to the
-`lxd` group, then run `snapcraft pack --output dist/portly_prod.snap`.
+because the `core26` base matches the host). On another release, build in LXD:
+`sudo snap install lxd && sudo lxd init --auto`, add yourself to the `lxd`
+group, then `snapcraft pack --output dist/portly_prod.snap`.
 
 Try it locally before uploading:
 
 ```bash
-sudo snap install --dangerous --classic dist/portly_prod.snap
-portly
+sudo snap install --dangerous dist/portly_prod.snap
+sudo snap connect portly:network-observe
+sudo snap connect portly:system-observe
+sudo snap connect portly:process-control
+snap run portly
 ```
 
-## 3. Upload
+(`--dangerous` installs skip auto-connections, so connect the plugs by hand.)
+
+## 3. Upload and release
 
 ```bash
-snapcraft upload dist/portly_prod.snap
+snapcraft upload --release=stable dist/portly_prod.snap
+snapcraft upload-metadata dist/portly_prod.snap
 ```
 
-The first upload of a classic snap is held for manual review: it shows up in
-the dashboard but cannot be released yet.
+The automated review takes a few minutes; Portly then appears in App Center
+within about an hour.
 
-## 4. Ask for classic confinement
-
-Post in the **classic-confinement** category of the Snapcraft forum
-(<https://forum.snapcraft.io/c/store-requests/classic-confinement/26>)
-(title: `Classic confinement request for portly`). A draft:
-
-> **Snap name:** portly
-> **Source:** https://github.com/dossmedaziz/portly
->
-> Portly is a desktop port manager: it lists every listening TCP/UDP port on
-> the machine with the process that owns it, and lets the user stop that
-> process from a window or the system tray.
->
-> **Why classic:**
-> - It must read `/proc/<pid>/{cmdline,status,fd}` of all processes and run the
->   host's `ss -tulpne` to map sockets to processes.
-> - Stopping a process owned by root or another user runs the host's
->   `pkexec kill`, so polkit shows the GNOME password prompt. `pkexec` is
->   setuid and cannot run inside strict confinement, and `process-control`
->   alone cannot signal other users' processes.
-> - "Open in browser" runs the host's `xdg-open`, and "Start on login" writes
->   `~/.config/autostart/dev.dosss.portly.desktop`.
->
-> This is the same class of tool as system monitors and process managers.
-
-Reviewers usually answer within a few days. If they refuse, the fallback is
-`confinement: strict` with the `network-observe`, `system-observe` and
-`process-control` plugs: listing ports and stopping your own processes still
-works; the password prompt for root processes does not.
-
-## 5. Release
-
-After approval, release the reviewed revision (see `snapcraft status portly`
-or the dashboard for its number):
-
-```bash
-snapcraft release portly <revision> stable
-```
-
-## 6. Store listing
+## 4. Store listing
 
 Fill in <https://snapcraft.io/portly/listing>: screenshots (App Center shows
 them prominently; ready-made ones are in `docs/screenshots/`, regenerate them
-with `flutter test tool/screenshots/store_screenshots_test.dart`), a banner, the category (**Utilities** or **Development**),
-and check the title, summary and description that come from
-`snap/snapcraft.yaml`. Once a revision is on `stable`, Portly appears in App
-Center within about an hour; it can also be installed with:
-
-```bash
-sudo snap install portly --classic
-```
+with `flutter test tool/screenshots/store_screenshots_test.dart`), a banner and
+the category (**Utilities** or **Development**). Title, summary and
+description come from `snap/snapcraft.yaml`.
 
 ## Updating
 
 Bump `version:` in `pubspec.yaml` (and add a `<release>` to
 `linux/packaging/dev.dosss.portly.metainfo.xml`), then build, upload and
-release again. Later classic revisions are released without another review.
+release again.

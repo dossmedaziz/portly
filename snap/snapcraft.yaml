@@ -11,7 +11,9 @@ description: |
   - Live list of ports with process, PID, user and full command line
   - Search, filter by protocol and "Mine only", sort by port or process
   - "What's using port X?" lookup
-  - Stop or force kill, with a password prompt for root-owned processes
+  - Stop or force kill your own processes (connect process-control once:
+    `snap connect portly:process-control`)
+  - For root-owned services, the exact `sudo` command to stop them
   - Tray menu with your processes and the status of your favorite ports
   - Notifications when a favorite port opens or closes
 
@@ -24,10 +26,9 @@ issues: https://github.com/dossmedaziz/portly/issues
 contact: https://github.com/dossmedaziz/portly/issues
 
 grade: stable
-# Classic: Portly reads every process in /proc, runs the host's `ss` and
-# `pkexec`, and signals processes of other users through pkexec — none of
-# which strict confinement allows. Needs Snap Store approval.
-confinement: classic
+# Strict: no pkexec inside the sandbox. Root-owned processes get a
+# "sudo kill" hint instead (see lib/core/sandbox.dart).
+confinement: strict
 compression: lzo
 
 platforms:
@@ -37,7 +38,14 @@ apps:
   portly:
     command: portly
     common-id: dev.dosss.portly
-    # GNOME, the tray host and libnotify come from the host desktop.
+    extensions: [gnome]
+    # "Start on login" writes $SNAP_USER_DATA/.config/autostart/<this>.
+    autostart: dev.dosss.portly.desktop
+    plugs:
+      - network-observe # ss: list sockets with their owners
+      - system-observe # read /proc/<pid>/{cmdline,status}
+      - process-control # stop the user's own processes (manual connect)
+      - unity7 # StatusNotifierItem tray icon
 
 parts:
   portly:
@@ -50,6 +58,9 @@ parts:
       - libx11-dev
       - libxi-dev
       - pkg-config
+    stage-packages:
+      - iproute2 # ss
+      - libnotify4
     override-pull: |
       craftctl default
       craftctl set version="$(sed -n 's/^version: *\([0-9.]*\).*/\1/p' pubspec.yaml)"
@@ -62,10 +73,3 @@ parts:
       craftctl default
       install -Dm644 "$CRAFT_PROJECT_DIR/linux/packaging/dev.dosss.portly.metainfo.xml" \
         "$CRAFT_PRIME/usr/share/metainfo/dev.dosss.portly.metainfo.xml"
-
-lint:
-  ignore:
-    # A classic snap uses the host's GTK, libnotify and D-Bus, like any
-    # desktop app installed from a .deb.
-    - classic
-    - library

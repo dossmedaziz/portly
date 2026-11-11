@@ -145,16 +145,18 @@ class _ToolbarState extends ConsumerState<_Toolbar> {
             icon: const Icon(Icons.refresh),
             onPressed: () => ref.read(portsProvider.notifier).refresh(),
           ),
-          OutlinedButton.icon(
-            onPressed: _elevating ? null : _elevatedScan,
-            icon: _elevating
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.admin_panel_settings_outlined),
-            label: const Text('Elevated scan'),
-          ),
+          // pkexec is not available inside the snap.
+          if (ref.watch(sandboxProvider).canElevate)
+            OutlinedButton.icon(
+              onPressed: _elevating ? null : _elevatedScan,
+              icon: _elevating
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.admin_panel_settings_outlined),
+              label: const Text('Elevated scan'),
+            ),
           if (updated != null) _LastUpdated(updated),
         ],
       ),
@@ -320,6 +322,7 @@ class _Body extends ConsumerWidget {
     }
     return Column(
       children: [
+        const _PermissionBanner(),
         if (state.source == ScanSource.procNet)
           const MaterialBanner(
             content: Text(
@@ -330,6 +333,54 @@ class _Body extends ConsumerWidget {
             actions: [SizedBox.shrink()],
           ),
         Expanded(child: PortTable(entries: visible)),
+      ],
+    );
+  }
+}
+
+/// In the snap, until process-control is connected: how to allow stopping
+/// processes.
+class _PermissionBanner extends ConsumerWidget {
+  const _PermissionBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sandbox = ref.watch(sandboxProvider);
+    if (!sandbox.isSnap) return const SizedBox.shrink();
+    if (ref.watch(canSignalProvider).value ?? true) {
+      return const SizedBox.shrink();
+    }
+    final command = sandbox.connectProcessControl;
+    return MaterialBanner(
+      leading: const Icon(Icons.key_outlined),
+      content: Text.rich(
+        TextSpan(
+          children: [
+            const TextSpan(
+              text:
+                  'To stop processes from Portly, allow it once in a '
+                  'terminal:  ',
+            ),
+            TextSpan(
+              text: command,
+              style: const TextStyle(fontFamily: 'monospace'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: command));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Command copied')));
+          },
+          child: const Text('Copy command'),
+        ),
+        TextButton(
+          onPressed: () => ref.invalidate(canSignalProvider),
+          child: const Text('Check again'),
+        ),
       ],
     );
   }

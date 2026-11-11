@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models.dart';
 import '../../core/process_killer.dart';
+import '../../core/sandbox.dart';
 import '../../providers/actions.dart';
 import '../../providers/providers.dart';
 
 /// Confirms and kills the owner of [entry], reporting the outcome in a
-/// SnackBar. Hidden owners are revealed with an elevated scan first.
+/// SnackBar. Hidden owners are revealed with an elevated scan first; in the
+/// snap, which cannot elevate, the user gets the `sudo` command instead.
 Future<void> killWithConfirmation(
   BuildContext context,
   WidgetRef ref,
@@ -17,6 +20,35 @@ Future<void> killWithConfirmation(
   final messenger = ScaffoldMessenger.of(context);
   void say(String text) =>
       messenger.showSnackBar(SnackBar(content: Text(text)));
+
+  final sandbox = ref.read(sandboxProvider);
+  if (sandbox.isSnap) {
+    if (entry.needsElevation(ref.read(currentUidProvider))) {
+      return showCommandDialog(
+        context,
+        icon: Icons.lock_outline,
+        title: 'Port ${entry.port} belongs to ${entry.user ?? 'another user'}',
+        message:
+            'The Snap Store version of Portly cannot stop processes of other '
+            'users. Run this in a terminal instead:',
+        command: sudoStopCommand(entry),
+      );
+    }
+    ref.invalidate(canSignalProvider);
+    if (!await ref.read(canSignalProvider.future)) {
+      if (!context.mounted) return;
+      return showCommandDialog(
+        context,
+        icon: Icons.key_outlined,
+        title: 'Allow Portly to stop processes',
+        message:
+            'Snaps need your permission to stop other programs. Run this once '
+            'in a terminal, then try again:',
+        command: sandbox.connectProcessControl,
+      );
+    }
+    if (!context.mounted) return;
+  }
 
   var target = entry;
   if (target.pid == null) {
@@ -200,5 +232,66 @@ Future<bool?> _confirm(
         ),
       ],
     ),
+  );
+}
+
+/// A dialog that explains something and offers a command to copy.
+Future<void> showCommandDialog(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  required String message,
+  required String command,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) {
+      final theme = Theme.of(context);
+      return AlertDialog(
+        icon: Icon(icon),
+        title: Text(title),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: SelectableText(
+                  command,
+                  style: const TextStyle(fontFamily: 'monospace'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.copy, size: 18),
+            label: const Text('Copy command'),
+            onPressed: () {
+              final messenger = ScaffoldMessenger.of(context);
+              Clipboard.setData(ClipboardData(text: command));
+              Navigator.pop(context);
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Command copied')),
+              );
+            },
+          ),
+        ],
+      );
+    },
   );
 }

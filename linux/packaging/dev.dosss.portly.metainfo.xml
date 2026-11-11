@@ -20,7 +20,7 @@
       <li>Live list of ports with process, PID, user and full command line</li>
       <li>Search, filter by protocol and "Mine only", sort by port or process</li>
       <li>"What's using port X?" lookup</li>
-      <li>Stop or force kill, with a password prompt for root-owned processes</li>
+      <li>Stop or force kill the process behind a port</li>
       <li>Tray menu with your processes and the status of your favorite ports</li>
       <li>Notifications when a favorite port opens or closes</li>
     </ul>

@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/command_runner.dart';
 import '../core/models.dart';
 import '../core/port_scanner.dart';
 import '../core/port_watcher.dart';
 import '../core/process_killer.dart';
+import '../core/sandbox.dart';
 import '../services/autostart_service.dart';
 import '../services/settings_service.dart';
 
@@ -22,6 +25,17 @@ final scannerProvider = Provider((ref) => PortScanner());
 
 final killerProvider = Provider(
   (ref) => ProcessKiller(isAlive: ref.watch(scannerProvider).proc.isAlive),
+);
+
+/// Strict snap or not; decides whether Portly may elevate with pkexec.
+final sandboxProvider = Provider<Sandbox>(
+  (ref) => Sandbox.detect(Platform.environment),
+);
+
+/// Whether Portly may signal processes (in a snap: process-control is
+/// connected). Invalidate it to check again.
+final canSignalProvider = FutureProvider<bool>(
+  (ref) => ref.watch(sandboxProvider).canSignal(const ProcessCommandRunner()),
 );
 
 final currentUidProvider = Provider<int>(

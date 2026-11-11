@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/command_runner.dart';
 import '../core/models.dart';
 import '../core/process_killer.dart';
+import '../core/sandbox.dart';
 import '../services/notification_service.dart';
 import 'providers.dart';
 
@@ -24,8 +25,24 @@ class PortActions {
   int get _uid => _ref.read(currentUidProvider);
 
   /// Signals the owner of [entry]: SIGTERM (waits 3 s) or SIGKILL if [force].
-  /// Uses pkexec when the process belongs to another user.
+  /// Uses pkexec when the process belongs to another user, except in the
+  /// snap, which cannot elevate and returns the `sudo` command instead.
   Future<KillResult> kill(PortEntry entry, {bool force = false}) async {
+    final sandbox = _ref.read(sandboxProvider);
+    if (!sandbox.canElevate && entry.needsElevation(_uid)) {
+      return KillResult(
+        KillOutcome.refused,
+        'Owned by ${entry.user ?? 'another user'}. '
+        'Run in a terminal: ${sudoStopCommand(entry)}',
+      );
+    }
+    if (sandbox.isSnap && !await _ref.read(canSignalProvider.future)) {
+      return KillResult(
+        KillOutcome.refused,
+        'Portly needs permission to stop processes. '
+        'Run once in a terminal: ${sandbox.connectProcessControl}',
+      );
+    }
     final pid = entry.pid;
     if (pid == null) {
       return const KillResult(
